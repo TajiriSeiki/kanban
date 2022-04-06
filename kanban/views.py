@@ -2,10 +2,12 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from django.shortcuts import render, redirect
-from django.views.generic import DetailView
-# from .forms import UserForm
+from django.shortcuts import render, redirect, resolve_url # resolve_urlを追加
+from django.views.generic import DetailView, UpdateView # UpdateViewを追加
+from django.contrib.auth.mixins import LoginRequiredMixin
 
+from .forms import UserForm
+from .mixins import OnlyYouMixin 
 
 def index(request):
     return render(request, "kanban/index.html")
@@ -31,7 +33,14 @@ def signup(request):
     return render(request, 'kanban/signup.html', context)
 
 
-
-class UserDetailView(DetailView):#モデルのデータを個別に詳細表示するビューを継承
-    model = User #templateでは小文字のuserとして取得することができる。
+class UserDetailView(LoginRequiredMixin,DetailView):
+    model = User
     template_name = "kanban/users/detail.html"
+
+
+class UserUpdateView(OnlyYouMixin, UpdateView):
+    model = User
+    template_name = "kanban/users/update.html"
+    form_class = UserForm
+    def get_success_url(self):
+        return resolve_url('kanban:users_detail', pk=self.kwargs['pk'])
